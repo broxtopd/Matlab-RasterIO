@@ -1,6 +1,28 @@
 % USES GDAL to read both the data and georeferencing from a raster data
 % file
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Copyright (c) 2018, Patrick Broxton
+% 
+%  Permission is hereby granted, free of charge, to any person obtaining a
+%  copy of this software and associated documentation files (the "Software"),
+%  to deal in the Software without restriction, including without limitation
+%  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+%  and/or sell copies of the Software, and to permit persons to whom the
+%  Software is furnished to do so, subject to the following conditions:
+% 
+%  The above copyright notice and this permission notice shall be included
+%  in all copies or substantial portions of the Software.
+% 
+%  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+%  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+%  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+%  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+%  DEALINGS IN THE SOFTWARE.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % USAGE: [data,geo] = ReadRaster(ifname,varargin)
 %   data is a matrix of the raster data
 %   geo is a structure containing the georeferencing information
@@ -28,7 +50,7 @@
 %          % geo struct and from a file
 %          WriteRaster(data2,'DEMO/SWE2.tif','geo',geo)
 %          WriteRaster(data,'DEMO/SWE3.tif','CopyProj','DEMO/SWE.tif')
-%           % Writes an ASC file instead of a tif
+%          % Writes an ASC file instead of a tif
 %          WriteRaster(data,'DEMO/SWE3.asc','CopyProj','DEMO/SWE.tif','of','AAIGrid')
 
 function [data,geo] = ReadRaster(ifname,varargin)
@@ -63,8 +85,8 @@ function [data,geo] = ReadRaster(ifname,varargin)
         if ~isnan(a_nodata), arg_str = [arg_str '-d ' num2str(a_nodata)]; end
         fullpath = mfilename('fullpath');
         [pathstr,~,~] = fileparts(fullpath);
-        eval(['!python "' pathstr filesep 'python' filesep 'clip_to_raster.py" ' arg_str ' "' ifname '" "' MatchRaster '" "' ofname '"']);
-        [ulx,uly,lrx,lry,pixelWidth,pixelHeight,proj4string] = getgeorefinfo(ofname);
+        eval(['!python "' pathstr filesep 'scripts' filesep 'clip_to_raster.py" ' arg_str ' "' ifname '" "' MatchRaster '" "' ofname '"']);
+        [ulx,uly,lrx,lry,pixelWidth,pixelHeight,proj4string,nodatavalue] = getgeorefinfo(ofname);
         data = imread(ofname);
         delete(ofname);
     elseif isempty(t_srs) && (~isempty(te) || ~isempty(tr) || ~isempty(ts) || ~isempty(a_nodata) || ~strcmpi(ext,'.tif'))
@@ -76,7 +98,7 @@ function [data,geo] = ReadRaster(ifname,varargin)
         if ~isnan(te), projwin = num2str([te(1) te(4) te(3) te(2)]); arg_str = [arg_str ' -projwin ' num2str(projwin)]; end
         if ~isnan(a_nodata), arg_str = [arg_str ' -a_nodata ' num2str(a_nodata)]; end
         eval(['!gdal_translate ' arg_str ' "' ifname '" "' ofname '"']);
-        [ulx,uly,lrx,lry,pixelWidth,pixelHeight,proj4string] = getgeorefinfo(ofname);
+        [ulx,uly,lrx,lry,pixelWidth,pixelHeight,proj4string,nodatavalue] = getgeorefinfo(ofname);
         data = imread(ofname);
         delete(ofname);
    	elseif ~isempty(t_srs)
@@ -130,7 +152,7 @@ function [ulx,uly,lrx,lry,pixelWidth,pixelHeight,proj4string,nodatavalue] = getg
     [pathstr,~,~] = fileparts(fullpath);
     
     ofname = [tempname '.txt'];
-    eval(['!python "' pathstr filesep 'python' filesep 'geotiffinfo.py" "' ifname '" "' ofname '"']);
+    eval(['!python "' pathstr filesep 'scripts' filesep 'geotiffinfo.py" "' ifname '" "' ofname '"']);
     fid = fopen(ofname);
     pixelWidth = fgetl(fid);
     pixelHeight = fgetl(fid);

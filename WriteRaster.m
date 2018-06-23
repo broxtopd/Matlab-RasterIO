@@ -1,6 +1,28 @@
 % USES GDAL to read both the data and georeferencing from a raster data
 % file
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Copyright (c) 2018, Patrick Broxton
+% 
+%  Permission is hereby granted, free of charge, to any person obtaining a
+%  copy of this software and associated documentation files (the "Software"),
+%  to deal in the Software without restriction, including without limitation
+%  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+%  and/or sell copies of the Software, and to permit persons to whom the
+%  Software is furnished to do so, subject to the following conditions:
+% 
+%  The above copyright notice and this permission notice shall be included
+%  in all copies or substantial portions of the Software.
+% 
+%  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+%  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+%  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+%  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+%  DEALINGS IN THE SOFTWARE.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % USAGE: WriteRaster(data,ofname,varargin)
 %   data is a matrix of the raster data
 %   ofname is the output raster data file
@@ -22,8 +44,8 @@
 %          % Read a subsetted area of SWE.tif
 %          [data2,geo] = ReadRaster('DEMO/SWE.tif','te',[-110 35 -90 45]); 
 %          % Create 2-D Matrix of x and y coordinates
-%          x = repmat(geo.x,[geo.size(1) 1]);
-%          y = repmat(geo.y,[1 geo.size(2)]);
+%          x = repmat(geo.x,[geo.sz(1) 1]);
+%          y = repmat(geo.y,[1 geo.sz(2)]);
 %          % Writes Raster data with georefererencing information from the
 %          % geo struct and from a file
 %          WriteRaster(data2,'DEMO/SWE2.tif','geo',geo)
@@ -51,19 +73,27 @@ function WriteRaster(data,ofname,varargin)
     CopyProj = p.Results.CopyProj;
     geo = p.Results.geo;
     a_nodata = p.Results.a_nodata;
+    if ~isempty(geo)
+        if isempty(a_nodata) && ~strcmp(geo.nodatavalue,'None')
+             a_nodata = geo.nodatavalue;
+        end
+    end
     ot = p.Results.ot;
     of = p.Results.of;
     
+    fpath = [fileparts(mfilename('fullpath')) filesep 'scripts'];
+    addpath(fpath);
     imwrite2tif(data,[],ofname,class(data));
+    rmpath(fpath);
     if ~isempty(CopyProj)
         fullpath = mfilename('fullpath');
         [pathstr,~,~] = fileparts(fullpath);
-        eval(['!python "' pathstr filesep 'python' filesep 'gdalcopyproj.py" "' CopyProj '" "' ofname '"']);
+        eval(['!python "' pathstr filesep 'scripts' filesep 'gdalcopyproj.py" "' CopyProj '" "' ofname '"']);
     elseif ~isempty(geo) 
         fullpath = mfilename('fullpath');
         [pathstr,~,~] = fileparts(fullpath);
         arg_str = ['-a_ullr ' num2str([geo.ulx geo.uly geo.lrx geo.lry]) ' -a_srs "' geo.proj4 '"'];
-        eval(['!python "' pathstr filesep 'python' filesep 'gdal_edit.py" ' arg_str ' "' ofname '"']);
+        eval(['!python "' pathstr filesep 'scripts' filesep 'gdal_edit.py" ' arg_str ' "' ofname '"']);
     else
         disp('Warning: No Georeferencing information found...')
     end
