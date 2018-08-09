@@ -44,8 +44,8 @@ EXAMPLE: Read SWE.tif or SWE.asc
          % Read a subsetted area of SWE.tif
          [data2,geo] = ReadRaster('DEMO/SWE.tif','te',[-110 35 -90 45]); 
          % Create 2-D Matrix of x and y coordinates
-         x = repmat(geo.x,[geo.size(1) 1]);
-         y = repmat(geo.y,[1 geo.size(2)]);
+         x = repmat(geo.x,[geo.sz(1) 1]);
+         y = repmat(geo.y,[1 geo.sz(2)]);
          % Writes Raster data with georefererencing information from the
          % geo struct and from a file
          WriteRaster(data2,'DEMO/SWE2.tif','geo',geo)
